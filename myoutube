@@ -30,7 +30,7 @@ user_agent='Mozilla/5.0 (Windows NT 6.1; rv:6.0) Gecko/20100101 Firefox/6.0'
 ##   if not found then get the best of mp4 (youtube),
 ##   if not found then get the best (all).
 ##  Note that by default for not audio format dash formats disabled,
-##   you can enable themby setting `skipdash=0' ↓.
+##   you can enable them by setting `skipdash=0' ↓.
 
 ##  youtube/all/all
 hdformat='22/mp4/best'
@@ -82,7 +82,7 @@ OPTIONS:
                        then lower, then 's', then the best;
                       'a' is audio only: first try to get youtube dash audio,
                        if not then 's', 'l', best video & output only sound
-                      (see: `youtube-dl -F <URL>`).
+                      (see: youtube-dl -F <URL>).
 
   PLAYER:
     By default watch in mplayer.
@@ -114,6 +114,7 @@ EXAMPLES:
         $exec -f s -fs "http://youtu.be/MejbOFk7H6c"
       Get audio dash format (youtube):
         $exec -f a "http://youtu.be/MejbOFk7H6c"
+		$exec -f a "http://tunein.com/station/?StationId=141430"
 
     MPV:
         $exec -mp "http://youtu.be/MejbOFk7H6c"
@@ -122,12 +123,14 @@ EXAMPLES:
       Get audio dash format (youtube):
         $exec -f a -mp "http://youtu.be/MejbOFk7H6c"
         $exec -f a -mp --vid=no "http://youtu.be/MejbOFk7H6c"
+        $exec -f a -mp --vid=no "http://tunein.com/station/?StationId=141430"
 
     FFPLAY:
         $exec -ff "http://youtu.be/MejbOFk7H6c"
       Get audio dash format (youtube):
         $exec -f a -ff "http://youtu.be/MejbOFk7H6c"
         $exec -f a -ff -vn -showmode 1 -x 400 -y 100 "http://youtu.be/MejbOFk7H6c"
+		$exec -f a -ff -vn -showmode 1 -x 400 -y 100 "http://tunein.com/station/?StationId=141430"
 
     VLC:
         $exec -vl "http://youtu.be/MejbOFk7H6c"
@@ -136,6 +139,7 @@ EXAMPLES:
       Get audio dash format (youtube):
         $exec -f a -vl "http://youtu.be/MejbOFk7H6c"
         $exec -f a -vl --no-video --audio-visual=visual "http://youtu.be/MejbOFk7H6c"
+		$exec -f a -vl --no-video --audio-visual=visual "http://tunein.com/station/?StationId=141430"
 
     VERBOSE:
         $exec -v -f h -mp "http://youtu.be/MejbOFk7H6c"
@@ -182,9 +186,10 @@ if [[ ! "$_last" =~ ^file:// ]]; then
         #_last="$(perl -MURI::Escape -e 'print uri_unescape($ARGV[0]);' "$_last")"
     # fi
     pver="$(python --version 2>&1)"
-    if [[ "$pver" =~ ^Python\ 2 ]]; then
+	pver="$(echo "${pver//Python/}"|cut -d'.' -f1)"
+    if (( "$pver" == 2 )); then
         _last=$(python -c 'import sys,urllib; print urllib.unquote(sys.argv[1]).decode("utf8")' "$_last")
-    elif [[ "$pver" =~ ^Python\ 3 ]]; then
+    elif [[ "$pver" -ge 3 ]]; then
         _last=$(python -c 'import sys; from urllib import parse; print(parse.unquote(sys.argv[1]))' "$_last")
     else
         echo 'We need python.'
@@ -203,7 +208,7 @@ if [[ ! "$_last" =~ ^file:// ]]; then
     # youtube.com/v/MejbOFk7H6c?version=3
     # https://youtube.com/embed/MejbOFk7H6c
     # youtube.com/embed/MejbOFk7H6c
-    ## Here we'l got yid = youtube id or nothnig
+    ## Here we'l got yid = youtube id or nothnig:
     yid="$(exps=('.*youtu\.be/\([^\/&?#]\+\)' '.*youtu.\+v[=/]\([^\/&?#]\+\)' '.*youtu.\+embed/\([^\/&?#]\+\)' '\([a-zA-Z0-9_-]\{11\}\)'); for exp in ${exps[@]}; do expr "$_last" : "$exp"; done)"
     ##  Get first non empty line (if exist)
     yid="$(echo $yid)"
@@ -219,15 +224,15 @@ else
     url="$vidurl"
 fi
 
-if [[ ! "$vidurl" =~ ^https\\?:/ ]]; then
+if [[ ! "$vidurl" =~ ^https?:/ ]]; then
     if ! (($localfile)); then
         # perl -v >& /dev/null
         # if ! (($? == 127)); then
         #     # url=file://"$(perl -MURI::Escape -e 'print uri_escape($ARGV[0]);' "$vidurl" | sed 's/%2F/\//g')"
         #     url=file://"$(perl -MURI::Escape -e 'print uri_escape($ARGV[0]);' "$vidurl" | perl -pe 's|%2F|/|g')"
-        if [[ "$pver" =~ ^Python\ 2 ]]; then
+        if (( "$pver" == 2 )); then
             url=file://"$(python -c 'import sys,urllib; print urllib.quote(sys.argv[1]).decode("utf8")' "$vidurl")"
-        elif [[ "$pver" =~ ^Python\ 3 ]]; then
+        elif [[ "$pver" -ge 3 ]]; then
             url=file://"$(python -c 'import sys; from urllib import parse; print(parse.quote(sys.argv[1]))' "$vidurl")"
         else
             url=file://"$(echo "$vidurl" | sed 's/ /%20/g')"
@@ -235,7 +240,6 @@ if [[ ! "$vidurl" =~ ^https\\?:/ ]]; then
     fi
 elif [[ "$1" == '-mp' ]]; then
     url="$vidurl"
-
 else ##  otherwise pass url to /usr/bin/youtube-dl
     hotlink="$(/usr/bin/youtube-dl --ignore-errors $([[ "$ffmpegexec" ]] && echo --prefer-ffmpeg --ffmpeg-location "$ffmpegexec") $((($skipdash)) && echo --youtube-skip-dash-manifest) --cookies="$cookies_file" --user-agent="$user_agent" -g $([[ "$format" ]] && echo "-f $format") "$vidurl")"
     url="$hotlink"
