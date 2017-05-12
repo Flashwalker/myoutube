@@ -50,7 +50,7 @@ skipdash=1 # 1: skip dash formats, 0: use dash formats.
 verbose=0
 
 ## Player options:
-mpvopts=("--quiet" "--msg-level=all=fatal" "--cookies" "--cookies-file" "$cookies_file" "--user-agent" "\"$user_agent\"" "--cache=30000" "--alang" "$lang" "--slang" "$lang" "--framedrop=decoder" "--stop-screensaver" "--heartbeat-interval=240" "--heartbeat-cmd=\"xscreensaver-command -deactivate\"" "--ytdl" "--ytdl-format=$format" "--ytdl-raw-options=cookies=${cookies_file},user-agent=\"${user_agent}\",youtube-skip-dash-manifest=") # mpv 0.7+
+mpvopts=("--quiet" "--msg-level=all=fatal" "--cookies" "--cookies-file" "$cookies_file" "--user-agent" "\"$user_agent\"" "--cache=30000" "--alang" "$lang" "--slang" "$lang" "--framedrop=decoder" "--stop-screensaver" "--heartbeat-interval=240" "--heartbeat-cmd=\"xscreensaver-command -deactivate\"" "--ytdl" "--ytdl-raw-options=cookies=${cookies_file},user-agent=\"${user_agent}\",youtube-skip-dash-manifest=") # mpv 0.7+
 ffplayopts=("-v" "error" "-autoexit" "-framedrop")
 vlcopts=("--quiet" "--play-and-exit" "--no-video-title-show" "--audio-language" "$lang" "--sub-language" "$lang")
 mplayeropts=("-quiet" "-msglevel" "all=1" "-prefer-ipv4" "-cookies" "-cookies-file" "\"$cookies_file\"" "-user-agent" "\"${user_agent}\"" "-cache" "30000" "-cache-min" "5" "-alang" "$lang" "-slang" "$lang" "-framedrop")
@@ -249,6 +249,7 @@ case "$1" in
     ## Watch in mpv:
     -mp)
         _args_="${array[@]:1:$len-2}"
+        mpvopts+=("--ytdl-format=$format")
         player=("$mpvexec" "${mpvopts[@]}")
         [[ -n "$_args_" && ! "$len" = 2 ]] && for i in "${_args_[@]}"; do player+=($i); done
         (($audioonly)) && player+=("--no-video")
@@ -303,3 +304,6 @@ if (($fail)); then
 else
     exit 0
 fi
+
+## TODO:
+# >&2
