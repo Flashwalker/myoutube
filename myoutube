@@ -181,20 +181,22 @@ _last="${array[$len-1]}"
 args_="${array[@]:0:$len-1}"
 ## Unescape last argument
 if [[ ! "$_last" =~ ^file:// ]]; then
-    # perl -v >& /dev/null
-    #if ! (($? == 127)); then
-        #_last="$(perl -MURI::Escape -e 'print uri_unescape($ARGV[0]);' "$_last")"
-    # fi
-    pver="$(python --version 2>&1)"
-	pver="$(echo "${pver//Python/}"|cut -d'.' -f1)"
-    if (( "$pver" == 2 )); then
-        _last=$(python -c 'import sys,urllib; print urllib.unquote(sys.argv[1]).decode("utf8")' "$_last")
-    elif [[ "$pver" -ge 3 ]]; then
-        _last=$(python -c 'import sys; from urllib import parse; print(parse.unquote(sys.argv[1]))' "$_last")
+    perl -v >& /dev/null
+	hasperl=$?
+    if ! (($hasperl == 127)); then
+        _last="$(perl -MURI::Escape -e 'print uri_unescape($ARGV[0]);' "$_last")"
     else
-        echo 'We need python.'
-        exit 1
-    fi
+		pver="$(python --version 2>&1)"
+		pver="$(echo "${pver//Python/}"|cut -d'.' -f1)"
+		if (("$pver" == 2)); then
+			_last=$(python -c 'import sys,urllib; print urllib.unquote(sys.argv[1]).decode("utf8")' "$_last")
+		elif [[ "$pver" -ge 3 ]]; then
+			_last=$(python -c 'import sys; from urllib import parse; print(parse.unquote(sys.argv[1]))' "$_last")
+		else
+			echo '[error]: We need perl or python.'
+			exit 1
+		fi
+	fi
 
     ## Can eat url:
     # https://m.youtube.com/watch?v=MejbOFk7H6c
@@ -226,17 +228,18 @@ fi
 
 if [[ ! "$vidurl" =~ ^https?:/ ]]; then
     if ! (($localfile)); then
-        # perl -v >& /dev/null
-        # if ! (($? == 127)); then
-        #     # url=file://"$(perl -MURI::Escape -e 'print uri_escape($ARGV[0]);' "$vidurl" | sed 's/%2F/\//g')"
-        #     url=file://"$(perl -MURI::Escape -e 'print uri_escape($ARGV[0]);' "$vidurl" | perl -pe 's|%2F|/|g')"
-        if (( "$pver" == 2 )); then
-            url=file://"$(python -c 'import sys,urllib; print urllib.quote(sys.argv[1]).decode("utf8")' "$vidurl")"
-        elif [[ "$pver" -ge 3 ]]; then
-            url=file://"$(python -c 'import sys; from urllib import parse; print(parse.quote(sys.argv[1]))' "$vidurl")"
-        else
-            url=file://"$(echo "$vidurl" | sed 's/ /%20/g')"
-        fi
+        if ! (($hasperl == 127)); then
+			# url=file://"$(perl -MURI::Escape -e 'print uri_escape($ARGV[0]);' "$vidurl" | sed 's/%2F/\//g')"
+			url=file://"$(perl -MURI::Escape -e 'print uri_escape($ARGV[0]);' "$vidurl" | perl -pe 's|%2F|/|g')"
+		else
+			if (("$pver" == 2)); then
+				url=file://"$(python -c 'import sys,urllib; print urllib.quote(sys.argv[1]).decode("utf8")' "$vidurl")"
+			elif [[ "$pver" -ge 3 ]]; then
+				url=file://"$(python -c 'import sys; from urllib import parse; print(parse.quote(sys.argv[1]))' "$vidurl")"
+			else
+				url=file://"$(echo "$vidurl" | sed 's/ /%20/g')"
+			fi
+		fi
     fi
 elif [[ "$1" == '-mp' ]]; then
     url="$vidurl"
