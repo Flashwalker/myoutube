@@ -243,8 +243,8 @@ if [[ ! "$vidurl" =~ ^https?:/ ]]; then
     fi
 elif [[ "$1" == '-mp' ]]; then
     url="$vidurl"
-else ##  otherwise pass url to /usr/bin/youtube-dl
-    hotlink="$(/usr/bin/youtube-dl --ignore-errors $([[ "$ffmpegexec" ]] && echo --prefer-ffmpeg --ffmpeg-location "$ffmpegexec") $((($skipdash)) && echo --youtube-skip-dash-manifest) --cookies="$cookies_file" --user-agent="$user_agent" -g $([[ "$format" ]] && echo "-f $format") "$vidurl")"
+else ##  otherwise pass url to youtube-dl
+    hotlink="$(youtube-dl --ignore-errors $([[ "$ffmpegexec" ]] && echo --prefer-ffmpeg --ffmpeg-location "$ffmpegexec") $((($skipdash)) && echo --youtube-skip-dash-manifest) --cookies="$cookies_file" --user-agent="$user_agent" -g $([[ "$format" ]] && echo "-f $format") "$vidurl")"
     url="$hotlink"
 fi
 
