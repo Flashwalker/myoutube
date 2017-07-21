@@ -36,9 +36,9 @@ user_agent='Mozilla/5.0 (Windows NT 6.1; rv:6.0) Gecko/20100101 Firefox/6.0'
 hdformat='22/mp4/best'
 ##  youtube/vimeo/vk/vk/facebook/dailymotion/all
 sdformat='18/43/35/5/http-360p/url360/cache360/progressive_sd_src_no_ratelimit/http-380/mp4/best'
-ldformat='35/5/36/18/43/http-360p/url360/cache360/progressive_sd_src_no_ratelimit/http-240/'"$sdformat"
+ldformat='35/5/36/18/43/http-360p/url360/cache360/progressive_sd_src_no_ratelimit/http-240/http-380/mp4/best'
 ##  yt/yt/yt/yt/yt/yt/yt/yt/vimeo/vk/vk/facebook/all/all
-aformat='141/251/140/171/18/43/35/5/http-360p/url360/cache360/progressive_sd_src_no_ratelimit/mp4/best' # dash audio
+aformat='141/251/140/171/18/43/35/5/36/http-360p/url360/cache360/progressive_sd_src_no_ratelimit/mp4/best' # dash audio
 format="$hdformat"
 
 ## Set audio only
