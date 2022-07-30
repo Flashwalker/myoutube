@@ -71,7 +71,7 @@ skipdash=1 # 1: skip dash formats, 0: use dash formats.
 
 
 ## Player options:
-mpvopts=("--quiet" "--msg-level=all=fatal" ${cookies_file:+"--cookies" "--cookies-file=\"$cookies_file\""} ${user_agent:+"--user-agent=\"$user_agent\""} "--cache=yes" ${lang:+"--alang=$lang" "--slang=$lang"} "--framedrop=decoder" "--stop-screensaver" "--ytdl" "--ytdl-raw-options=${cookies_file:+cookies=\"$cookies_file\",}${user_agent:+user-agent=\"$user_agent\",}youtube-skip-dash-manifest=") # mpv 0.7+
+mpvopts=("--quiet" "--msg-level=all=fatal" ${cookies_file:+"--cookies" "--cookies-file=\"$cookies_file\""} ${user_agent:+"--user-agent=\"$user_agent\""} "--cache=yes" "--demuxer-max-bytes=10MiB" ${lang:+"--alang=$lang" "--slang=$lang"} "--framedrop=decoder" "--stop-screensaver" "--ytdl" "--ytdl-raw-options=${cookies_file:+cookies=\"$cookies_file\",}${user_agent:+user-agent=\"$user_agent\",}youtube-skip-dash-manifest=") # mpv 0.7+
 ffplayopts=("-v" "error" "-framedrop") # "-autoexit"
 vlcopts=("--quiet" "--play-and-exit" "--no-video-title-show" ${lang:+"--audio-language" "$lang" "--sub-language" "$lang"})
 mplayeropts=("-quiet" "-msglevel" "all=1" "-prefer-ipv4" ${cookies_file:+"-cookies" "-cookies-file" "\"$cookies_file\""} ${user_agent:+"-user-agent" "\"$user_agent\""} "-cache" "30000" "-cache-min" "5" ${lang:+"-alang" "$lang" "-slang" "$lang"} "-framedrop")
@@ -93,7 +93,7 @@ See also ######## CONFIG ######## section of this script.
 
 OPTIONS:
     -h, --help      - print this help.
-    -v              - vernose.
+    -v              - verbose.
 
   FORMAT:
     -f FORMAT       - accepts: 'h', 's', 'l', 'a' or youtube-dl formats;
@@ -279,8 +279,8 @@ elif [[ "$1" == '-mp' ]]; then
     #echo 2if; exit
     url="$vidurl"
 else ##  otherwise pass url to youtube-dl
-    (($verbose)) && echo exec: "$youtubedlexec" --ignore-errors $([[ "$ffmpegexec" ]] && echo --prefer-ffmpeg --ffmpeg-location "$ffmpegexec") $((($skipdash)) && echo --youtube-skip-dash-manifest) --cookies="$cookies_file" --user-agent="$user_agent" -g $([[ "$format" ]] && echo "-f $format") "$vidurl"
-    hotlink="$("$youtubedlexec" --ignore-errors $([[ "$ffmpegexec" ]] && echo --prefer-ffmpeg --ffmpeg-location "$ffmpegexec") $((($skipdash)) && echo --youtube-skip-dash-manifest) --cookies="$cookies_file" --user-agent="$user_agent" -g $([[ "$format" ]] && echo "-f $format") "$vidurl")"
+    (($verbose)) && echo exec: "$youtubedlexec" --ignore-errors $([[ "$ffmpegexec" ]] && echo --prefer-ffmpeg --ffmpeg-location "$ffmpegexec") $((($skipdash)) && echo --youtube-skip-dash-manifest) --cookies="$cookies_file" ${user_agent:+--user-agent="$user_agent"} -g $([[ "$format" ]] && echo "-f $format") "$vidurl"
+    hotlink="$("$youtubedlexec" --ignore-errors $([[ "$ffmpegexec" ]] && echo --prefer-ffmpeg --ffmpeg-location "$ffmpegexec") $((($skipdash)) && echo --youtube-skip-dash-manifest) --cookies="$cookies_file" ${user_agent:+--user-agent="$user_agent"} -g $([[ "$format" ]] && echo "-f $format") "$vidurl")"
     url="$hotlink"
 fi
 #echo yid="$yid" vidurl="$vidurl" url="$url" hotlink="$hotlink"; exit
@@ -328,12 +328,12 @@ case "$1" in
         _args_="${array[@]:1:$len-2}"
         player=("$vlcexec" "${vlcopts[@]}")
         (($xvout)) && player+=("--vout=xcb_xv")
-        (($optimization)) && player+=("")
-        (($width)) && player+=("")
-        (($height)) && player+=("")
-        [[ "$geometry" ]] && player+=("")
+        #TODO: (($optimization)) && player+=("")
+        #TODO: (($width)) && player+=("")
+        #TODO: (($height)) && player+=("")
+        #TODO: [[ "$geometry" ]] && player+=("")
         (($audioonly)) && player+=("--intf" "dummy" "--novideo")
-        [[ "$lang" ]] && player+=("")
+        #TODO: [[ "$lang" ]] && player+=("")
         (($verbose)) && player+=("--no-quiet")
         [[ -n "$_args_" && ! "$len" = 2 ]] && for i in "${_args_[@]}"; do player+=($i); done
     ;;
