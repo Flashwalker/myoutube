@@ -1,27 +1,36 @@
 #!/bin/bash
-
+##
+## myoutube - play video via yt-dlp (youtube-dl) in minimal desktop player. Or local file.
+## Available players: 
+##    mpv      (Default) 
+##    mplayer  (via -mplayer option)
+##    cvlc     (via -vlc option)
+##    ffplay   (via -ffplay option)
+##
 ## License: WTFPL2 http://wtfpl2.com/
-## copyleft uzver(at)protonmail.ch (ɔ) 2017
+## copyleft uzver(at)protonmail.ch (ɔ) 2017 - till the end of the Universe
 ## https://notabug.org/uzver/myoutube
+##
 
 ######## CONFIG ########
 ## Set prefered languages (subtitles and audio stream)
 lang='ru,uk,en,us'
 
 ## Set executables:
-mplayerexec="mplayer"
-mpvexec="mpv"
-# vlcexec="vlc"
-vlcexec="cvlc"
-ffplayexec="ffplay"
-#ffmpegexec="ffmpeg"
-ffmpegexec="/usr/bin/ffmpeg"
-# ffplayexec="avplay"
-# ffmpegexec="avconv"
-#youtubedlexec="youtube-dl"
-#youtubedlexec="/usr/bin/youtube-dl" # apt
-#youtubedlexec="/usr/local/bin/youtube-dl" # pip
-youtubedlexec="/usr/local/bin/yt-dlp" # yt-dlp pip
+mpv_exec="mpv"
+mplayer_exec="mplayer"
+# vlc_exec="vlc"
+vlc_exec="cvlc"
+ffplay_exec="ffplay"
+#ffmpeg_exec="ffmpeg"
+ffmpeg_exec="/usr/bin/ffmpeg"
+# ffplay_exec="avplay"
+# ffmpeg_exec="avconv"
+#youtubedl_exec="youtube-dl" # env
+#youtubedl_exec="/usr/bin/youtube-dl" # apt
+#youtubedl_exec="/usr/local/bin/youtube-dl" # pip
+#youtubedl_exec="/usr/local/bin/yt-dlp" # yt-dlp pip
+youtubedl_exec="yt-dlp" # yt-dlp env
 
 verbose=0
 
@@ -54,13 +63,16 @@ cookies_file="$(mktemp -u /tmp/myoutube-cookies.XXXXXX)"
 ##  Note that by default for not audio format dash formats disabled,
 ##   you can enable them by setting `skipdash=0' ↓.
 
-##  youtube/vimeo/vk/vk/ok/all/all
-hdformat='22/136+140/http-720p/url720/cache720/mpd-5/mpd-4/mp4/best'
-##  youtube/vimeo/vk/vk/facebook/dailymotion/ok/ok/all
-sdformat='18/43/35/5/http-360p/url360/cache360/progressive_sd_src_no_ratelimit/http-380/mpd-3/mpd-4/mp4/best'
-ldformat='35/5/36/18/43/http-360p/url360/cache360/progressive_sd_src_no_ratelimit/http-240/http-380/mpd-2/mpd-1/mp4/best'
-##  yt/yt/yt/yt/yt/yt/yt/yt/vimeo/vk/vk/facebook/dailymotion/ok/ok/all
+## Set formats aliases:
+##  yt/yt/yt/vimeo/vk/vk/ok/ok/all/all
+hdformat='22/136+140/135+140/http-720p/url720/cache720/mpd-5/mpd-4/mp4/best'
+##  yt/yt/yt/yt/yt/vimeo/vk/vk/facebook/dailymotion/ok/ok/all/all
+sdformat='135+140/18/43/134+140/35/http-360p/url360/cache360/progressive_sd_src_no_ratelimit/http-380/mpd-3/mpd-4/mp4/best'
+##  yt/yt/yt/yt/yt/yt/yt/vimeo/vk/vk/facebook/dailymotion/dailymotion/ok/ok/all/all
+ldformat='133+140/133+139/35/5/36/18/43/http-360p/url360/cache360/progressive_sd_src_no_ratelimit/http-240/http-380/mpd-2/mpd-1/mp4/best'
+##  yt/yt/yt/yt/yt/yt/yt/yt/yt/vimeo/vk/vk/facebook/dailymotion/ok/ok/all
 aformat='141/251/140/171/18/43/35/5/36/http-360p/url360/cache360/progressive_sd_src_no_ratelimit/http-380/mpd-3/mpd-2/mp4/best' # dash audio
+## Set default format:
 format="$hdformat"
 
 ## Set audio only
@@ -69,22 +81,52 @@ audioonly=0 # 1: audio only, 0: audio & video
 ## Set use of dash formats (youtube):
 skipdash=1 # 1: skip dash formats, 0: use dash formats.
 
+## Set player related options:
+# excluded:
+#   mpv: "--cache=yes" "--demuxer-max-bytes=10MiB" "--framedrop=decoder"
+#   ffplay: # "-autoexit"
+# included:
+#  mpv min ver: 0.7+
+mpv_opts=(\
+    "--quiet" \
+    "--msg-level=all=fatal" \
+    "--stop-screensaver" \
+    "--ytdl" \
+    "--ytdl-raw-options=${cookies_file:+cookies=\"$cookies_file\",}${user_agent:+user-agent=\"$user_agent\",}youtube-skip-dash-manifest=" \
+    ${cookies_file:+"--cookies" "--cookies-file=\"$cookies_file\""} \
+    ${user_agent:+"--user-agent=\"$user_agent\""} \
+    ${lang:+"--alang=$lang" "--slang=$lang"} \
+)
+mplayer_opts=(\
+    "-quiet" \
+    "-msglevel" "all=1" \
+    "-prefer-ipv4" \
+    "-cache" "30000" \
+    "-cache-min" "5" \
+    "-framedrop" \
+    ${cookies_file:+"-cookies" "-cookies-file" "\"$cookies_file\""} \
+    ${user_agent:+"-user-agent" "\"$user_agent\""} \
+    ${lang:+"-alang" "$lang" "-slang" "$lang"} \
+)
+vlc_opts=(\
+    "--quiet" \
+    "--play-and-exit" \
+    "--no-video-title-show" \
+    ${lang:+"--audio-language" "$lang" "--sub-language" "$lang"} \
+)
+ffplay_opts=(\
+    "-v" "error" \
+    "-framedrop" \
+)
+###### CONFIG END ######
 
-## Player options:
-mpvopts=("--quiet" "--msg-level=all=fatal" ${cookies_file:+"--cookies" "--cookies-file=\"$cookies_file\""} ${user_agent:+"--user-agent=\"$user_agent\""} "--cache=yes" "--demuxer-max-bytes=10MiB" ${lang:+"--alang=$lang" "--slang=$lang"} "--framedrop=decoder" "--stop-screensaver" "--ytdl" "--ytdl-raw-options=${cookies_file:+cookies=\"$cookies_file\",}${user_agent:+user-agent=\"$user_agent\",}youtube-skip-dash-manifest=") # mpv 0.7+
-ffplayopts=("-v" "error" "-framedrop") # "-autoexit"
-vlcopts=("--quiet" "--play-and-exit" "--no-video-title-show" ${lang:+"--audio-language" "$lang" "--sub-language" "$lang"})
-mplayeropts=("-quiet" "-msglevel" "all=1" "-prefer-ipv4" ${cookies_file:+"-cookies" "-cookies-file" "\"$cookies_file\""} ${user_agent:+"-user-agent" "\"$user_agent\""} "-cache" "30000" "-cache-min" "5" ${lang:+"-alang" "$lang" "-slang" "$lang"} "-framedrop")
-########################
-
-player=("$mplayerexec" "${mplayeropts[@]}")
-
+#player=("$mpv_exec" "${mpv_opts[@]}")
 exec="$(basename "$0")"; [[ "$exec" ]] || exec="${0##*/}"
 
 printhelp() {
 cat <<EOF
-Watch video directly in desktop player via youtube-dl... or local file.
-For now players available: mplayer, mpv, ffplay/avplay, vlc
+Play web video via yt-dlp (youtube-dl) in minimal desktop player. Or local file.
+Available players: mpv, mplayer, vlc, ffplay/avplay
 
 $exec [OPTIONS [-f FORMAT] [PLAYER] [PLAYER OPTIONS]] <URL|FILE>
 The order of passed options has matter!
@@ -101,7 +143,7 @@ OPTIONS:
                        if not then best mp4, then the best (defaut);
                       's' is sd (standart) quality: first try to get 640x360,
                        then lower, then the best;
-                      'l' is low quality: first try to get 480x240,
+                      'l' is ld (low) quality: first try to get 480x240,
                        then lower, then 's', then the best;
                       'a' is audio only: first try to get youtube dash audio,
                        if not then 's', 'l', best video & output only sound
@@ -109,63 +151,64 @@ OPTIONS:
 
   PLAYER:
     By default watch in mplayer.
-    -mp             - watch in mpv.
-    -ff             - watch in ffplay.
-    -vl             - watch in vlc.
+    -mp|-mpv        - watch in mpv (default).
+    -m|-mplayer     - watch in mplayer.
+    -vl|-vlc        - watch in cvlc.
+    -ff|-ffplay     - watch in ffplay.
 
    PLAYER OPTIONS:
-    MPLAYER:
-      Script accepts all mplayer options.
-      e.g.:         -fs -really-quiet -vo fbdev2 -framedrop -zoom -xy 1024 -subcp enca:ru:UTF-8 -nodouble -dr -lavdopts skiploopfilter=all:threads=2 ...
     MPV:
-      Script accepts all mpv options if -mp optiion has been passed before.
+      Script accepts all mpv options.
       e.g.:         --msg-level=all=no --really-quiet --no-terminal --vo=null --no-video --sub-codepage=enca:ru:UTF-8 --vd-lavc-skiploopfilter=all --vd-lavc-threads=2
                     --framedrop=decoder --no-terminal --heartbeat-interval=240
                     --heartbeat-cmd="xscreensaver-command -deactivate"
                     --heartbeat-cmd="gnome-screensaver-command -p" ...
-    FFPLAY:
-      Script accepts all ffplay options if -ff optiion has been passed before.
-      e.g.:         -fs -vn -nodisp -framedrop -fast -x 1024 -y 768 ...
+    MPLAYER:
+      Script accepts all mplayer options if -mplayer optiion has been passed before.
+      e.g.:         -fs -really-quiet -vo fbdev2 -framedrop -zoom -xy 1024 -subcp enca:ru:UTF-8 -nodouble -dr -lavdopts skiploopfilter=all:threads=2 ...
     VLC:
-      Script accepts all ffplay options if -vl optiion has been passed before.
+      Script accepts all ffplay options if -vlc optiion has been passed before.
       e.g.:         --fullscreen ...
+    FFPLAY:
+      Script accepts all ffplay options if -ffplay optiion has been passed before.
+      e.g.:         -fs -vn -nodisp -framedrop -fast -x 1024 -y 768 ...
 
 EXAMPLES:
-    MPLAYER:
-        $exec "http://youtu.be/MejbOFk7H6c"
-      Get quality 360p and play fullscreen:
-        $exec -f s -fs "http://youtu.be/MejbOFk7H6c"
-      Get audio dash format (youtube):
-        $exec -f a "http://youtu.be/MejbOFk7H6c"
-		$exec -f a "http://tunein.com/station/?StationId=141430"
-
     MPV:
-        $exec -mp "http://youtu.be/MejbOFk7H6c"
+        $exec -mpv "http://youtu.be/MejbOFk7H6c"
       Get best format and play fullscreen:
-        $exec -f best -mp --force-window --really-quiet --fs --heartbeat-cmd="gnome-screensaver-command -p" "http://youtu.be/MejbOFk7H6c"
+        $exec -f best -mpv --force-window --really-quiet --fs --heartbeat-cmd="gnome-screensaver-command -p" "http://youtu.be/MejbOFk7H6c"
       Get audio dash format (youtube):
-        $exec -f a -mp "http://youtu.be/MejbOFk7H6c"
-        $exec -f a -mp --vid=no "http://youtu.be/MejbOFk7H6c"
-        $exec -f a -mp --vid=no "http://tunein.com/station/?StationId=141430"
+        $exec -f audio -mpv "http://youtu.be/MejbOFk7H6c"
+        $exec -f audio -mpv --vid=no "http://youtu.be/MejbOFk7H6c"
+        $exec -f audio -mpv --vid=no "http://tunein.com/station/?StationId=141430"
 
-    FFPLAY:
-        $exec -ff "http://youtu.be/MejbOFk7H6c"
+    MPLAYER:
+        $exec -mplayer "http://youtu.be/MejbOFk7H6c"
+      Get quality 360p and play fullscreen:
+        $exec -f sd -mplayer -fs "http://youtu.be/MejbOFk7H6c"
       Get audio dash format (youtube):
-        $exec -f a -ff "http://youtu.be/MejbOFk7H6c"
-        $exec -f a -ff -vn -showmode 1 -x 400 -y 100 "http://youtu.be/MejbOFk7H6c"
-		$exec -f a -ff -vn -showmode 1 -x 400 -y 100 "http://tunein.com/station/?StationId=141430"
+        $exec -f audio -mplayer "http://youtu.be/MejbOFk7H6c"
+		$exec -f audio -mplayer "http://tunein.com/station/?StationId=141430"
 
     VLC:
-        $exec -vl "http://youtu.be/MejbOFk7H6c"
+        $exec -vlc "http://youtu.be/MejbOFk7H6c"
       Get low quality format and play fullscreen:
-        $exec -f l -vl -f "http://youtu.be/MejbOFk7H6c"
+        $exec -f ld -vlc -f "http://youtu.be/MejbOFk7H6c"
       Get audio dash format (youtube):
-        $exec -f a -vl "http://youtu.be/MejbOFk7H6c"
-        $exec -f a -vl --no-video --audio-visual=visual "http://youtu.be/MejbOFk7H6c"
-		$exec -f a -vl --no-video --audio-visual=visual "http://tunein.com/station/?StationId=141430"
+        $exec -f audio -vlc "http://youtu.be/MejbOFk7H6c"
+        $exec -f audio -vlc --no-video --audio-visual=visual "http://youtu.be/MejbOFk7H6c"
+		$exec -f audio -vlc --no-video --audio-visual=visual "http://tunein.com/station/?StationId=141430"
+
+    FFPLAY:
+        $exec -ffplay "http://youtu.be/MejbOFk7H6c"
+      Get audio dash format (youtube):
+        $exec -f audio -ffplay "http://youtu.be/MejbOFk7H6c"
+        $exec -f audio -ffplay -vn -showmode 1 -x 400 -y 100 "http://youtu.be/MejbOFk7H6c"
+		$exec -f audio -ffplay -vn -showmode 1 -x 400 -y 100 "http://tunein.com/station/?StationId=141430"
 
     VERBOSE:
-        $exec -v -f h -mp "http://youtu.be/MejbOFk7H6c"
+        $exec -v -f hd -mpv "http://youtu.be/MejbOFk7H6c"
 EOF
 }
 
@@ -182,10 +225,10 @@ if [[ "$1" == "-f" ]]; then
     if [[ "$2" && "$3" ]]; then
         format="$2"
         case "$format" in
-            h) format="$hdformat" ;;
-            s) format="$sdformat" ;;
-            l) format="$ldformat" ;;
-            a) format="$aformat"; skipdash=0; audioonly=1 ;;
+            h|hd) format="$hdformat" ;;
+            s|sd) format="$sdformat" ;;
+            l|ld) format="$ldformat" ;;
+            a|audio) format="$aformat"; skipdash=0; audioonly=1 ;;
             *) skipdash=0 ;;
         esac
     fi
@@ -233,7 +276,7 @@ if [[ ! "$_last" =~ ^file:// ]]; then
     # youtube.com/v/MejbOFk7H6c?version=3
     # https://youtube.com/embed/MejbOFk7H6c
     # youtube.com/embed/MejbOFk7H6c
-    ## Here we'l got yid = youtube id or nothnig:
+    ## Here we get yid = youtube id or nothnig:
     yid="$(exps=('.*youtu\.be/\([^\/&?#]\+\)' '.*youtu.\+v[=/]\([^\/&?#]\+\)' '.*youtu.\+embed/\([^\/&?#]\+\)' '\([a-zA-Z0-9_-]\{11\}\)'); for exp in ${exps[@]}; do expr "$_last" : "$exp"; done)"
     ##  Get first non empty line, if exist get last argument
     #[[ "$yid" ]] && yid="$(echo $yid)" || yid="$_last"
@@ -250,10 +293,12 @@ else
     url="$vidurl"
 fi
 #echo vidurl="$vidurl" url="$url"; exit
-echo vidurl="$vidurl" url="$url"
-## Escape file://
-if [[ ! "$vidurl" =~ ^https?:/ ]]; then
-    #echo 1if; exit
+
+url="$vidurl"
+
+# If url is not *:// URI treat it like local file and encode it to URI
+if [[ ! "$vidurl" =~ ^[[:alpha:]]+://.+ ]]; then
+    ## Escape file:// uri
     if ! (($localfile)); then
         if ! [[ "$player" =~ ^mplayer ]]; then
             if ! (($hasperl == 127)); then
@@ -266,80 +311,45 @@ if [[ ! "$vidurl" =~ ^https?:/ ]]; then
                     url=file://"$(python -c 'import sys; from urllib import parse; print(parse.quote(sys.argv[1]))' "$vidurl")"
                 else
                     #url=file://"$(echo "$vidurl" | sed 's/ /%20/g')"
-                    url=file://"${vidurl// /%20}"
+                    url="file://${vidurl// /%20}"
                 fi
             fi
         else
-            url=file://"$vidurl"
+            url="file://${vidurl}"
         fi
     fi
-# FIXME: mpv ytdl extractor '.' bug: + && [[ "$yid" ]]
-#elif [[ "$1" == '-mp' ]] && [[ "$yid" ]]; then
-elif [[ "$1" == '-mp' ]]; then
-    #echo 2if; exit
-    url="$vidurl"
-else ##  otherwise pass url to youtube-dl
-    (($verbose)) && echo exec: "$youtubedlexec" --ignore-errors $([[ "$ffmpegexec" ]] && echo --prefer-ffmpeg --ffmpeg-location "$ffmpegexec") $((($skipdash)) && echo --youtube-skip-dash-manifest) --cookies="$cookies_file" ${user_agent:+--user-agent="$user_agent"} -g $([[ "$format" ]] && echo "-f $format") "$vidurl"
-    hotlink="$("$youtubedlexec" --ignore-errors $([[ "$ffmpegexec" ]] && echo --prefer-ffmpeg --ffmpeg-location "$ffmpegexec") $((($skipdash)) && echo --youtube-skip-dash-manifest) --cookies="$cookies_file" ${user_agent:+--user-agent="$user_agent"} -g $([[ "$format" ]] && echo "-f $format") "$vidurl")"
-    url="$hotlink"
+## If player is not mpv
+elif [[ "$1" =~ ^-m(player)?$ || "$1" =~ ^-vl(c)?$ || "$1" =~ ^-ff(play)?$ ]]; then
+    ## pass url to youtube-dl
+    ytgetcmd=("$youtubedl_exec" --ignore-errors $([[ "$ffmpeg_exec" ]] && echo --prefer-ffmpeg --ffmpeg-location "$ffmpeg_exec") $((($skipdash)) && echo --youtube-skip-dash-manifest) --cookies="$cookies_file" ${user_agent:+--user-agent="$user_agent"} -g $([[ "$format" ]] && echo "-f $format") "$vidurl")
+    (($verbose)) && echo "run: ${ytgetcmd[@]}"
+    
+    IFSBAK="$IFS"
+        IFS=$'\r\n' hotlink=($("${ytgetcmd[@]}"))
+    IFS="$IFSBAK"
+
+    if [ "${#hotlink[@]}" -gt 1 ]; then
+        #for i in "${!hotlink[@]}"; do "url${i}=${hotlink[i]}"; done
+        
+        # Set video url to the first url from the array of urls
+        url="${hotlink[0]}"
+        # Set video url to an array of urls
+        #url=(${hotlink[@]})
+        # Set audio url to the second url from the array of urls
+        aurl="${hotlink[1]}"
+    else
+        # Set audio url to the first url from the array of urls
+        url="${hotlink[0]}"
+    fi
 fi
-#echo yid="$yid" vidurl="$vidurl" url="$url" hotlink="$hotlink"; exit
+
+#If audioonly=1 and aurl not Null clear url and play only aurl
+(($audioonly)) && [ -n "$aurl" ] && url=""
+
 case "$1" in
-    ## Watch in mpv:
-    -mp)
-        _args_="${array[@]:1:$len-2}"
-        mpvopts+=("--ytdl-format=$format")
-        player=("$mpvexec" "${mpvopts[@]}")
-        (($xvout)) && player+=("--vo=xv")
-        (($optimization)) && player+=("--vd-lavc-threads=$cores" "--vd-lavc-skiploopfilter=all" )
-        (($width)) && player+=("-geometry=$width")
-        (($height)) && player+=("")
-        [[ "$geometry" ]] && player+=("--geometry" "$geometry")
-        (($audioonly)) && player+=("--no-video")
-        [[ "$lang" ]] && player+=("--sub-codepage=enca:${lang%%,*}:UTF-8")
-        (($verbose)) && player+=("--msg-level=all=status")
-        [[ -n "$_args_" && ! "$len" = 2 ]] && for i in "${_args_[@]}"; do player+=($i); done
-    ;;
-    ## Watch in ffplay:
-    -ff)
-        # if ! expr "$ffplayexec" : 'avplay' > /dev/null; then
-        if ! [[ "$ffplayexec" =~ avplay ]]; then
-            # ffplay -version >& /dev/null
-            which ffplay >& /dev/null
-            if (($? == 1)); then
-                ffplayexec="avplay"
-                ffmpegexec="avconv"
-            fi
-        fi
-        (($xvout)) && export VIDEODEV=xv
-        player=("$ffplayexec" "${ffplayopts[@]}")
-        #TODO: (($optimization)) && player+=("")
-        (($width)) && player+=("-x" "$width")
-        (($height)) && player+=("-y" "$height")
-        [[ "$geometry" ]] && player+=("-s" "$geometry" "-video_size" "$geometry")
-        (($audioonly)) && player+=("-vn" "-showmode" "1" "-x" "400" "-y" "100")
-        #TODO: [[ "$lang" ]] && player+=("")
-        (($verbose)) && player+=("-v" "info")
-        _args_="${array[@]:1:$len-2}"
-        [[ -n "$_args_" && ! "$len" = 2 ]] && for i in "${_args_[@]}"; do player+=($i); done
-    ;;
-    ## Watch in vlc:
-    -vl)
-        _args_="${array[@]:1:$len-2}"
-        player=("$vlcexec" "${vlcopts[@]}")
-        (($xvout)) && player+=("--vout=xcb_xv")
-        #TODO: (($optimization)) && player+=("")
-        #TODO: (($width)) && player+=("")
-        #TODO: (($height)) && player+=("")
-        #TODO: [[ "$geometry" ]] && player+=("")
-        (($audioonly)) && player+=("--intf" "dummy" "--novideo")
-        #TODO: [[ "$lang" ]] && player+=("")
-        (($verbose)) && player+=("--no-quiet")
-        [[ -n "$_args_" && ! "$len" = 2 ]] && for i in "${_args_[@]}"; do player+=($i); done
-    ;;
     ## Watch in mplayer:
-    *)
-        player=("$mplayerexec" "${mplayeropts[@]}")
+    -m|-mplayer)
+        player=("$mplayer_exec" "${mplayer_opts[@]}")
         (($xvout)) && player+=("-vo" "xv")
         (($optimization)) && player+=("-lavdopts" "skiploopfilter=all:threads=$cores" "-nodouble" "-dr")
         (($width)) && player+=("-xy" "1024" "-zoom")
@@ -348,21 +358,99 @@ case "$1" in
         (($audioonly)) && player+=("-novideo")
         [[ "$lang" ]] && player+=("-subcp" "enca:${lang%%,*}:UTF-8")
         (($verbose)) && player+=("-msglevel" "all=5")
+        # Add options from stdin
         [[ -n "$args_" && ! "$len" = 2 ]] && player+=("$args_")
+        # Add aurl as the audio track
+        [[  -n "$url" && -n "$aurl" ]] && player+=("-audiofile" "$aurl")
+        # Create full executable string
+        player+=("${url:-$aurl}")
+    ;;
+    ## Watch in vlc:
+    -vl|-vlc)
+        _args_="${array[@]:1:$len-2}"
+        player=("$vlc_exec" "${vlc_opts[@]}")
+        (($xvout)) && player+=("--vout=xcb_xv")
+        #TODO: (($optimization)) && player+=("")
+        #TODO: (($width)) && player+=("")
+        #TODO: (($height)) && player+=("")
+        #TODO: [[ "$geometry" ]] && player+=("")
+        (($audioonly)) && player+=("--intf" "dummy" "--novideo")
+        #TODO: [[ "$lang" ]] && player+=("")
+        (($verbose)) && player+=("--no-quiet")
+        # Add options from stdin
+        [[ -n "$_args_" && ! "$len" = 2 ]] && for i in "${_args_[@]}"; do player+=($i); done
+        # Add aurl as the audio track
+        #[[  -n "$url" && -n "$aurl" ]] && player+=("--input-list" "$aurl")
+        [[  -n "$url" && -n "$aurl" ]] && player+=("--input-slave" "$aurl")
+        # Create full executable string
+        player+=("${url:-$aurl}")
+        #player+=("${url}" "${aurl}")
+    ;;
+    ## Watch in ffplay:
+    -ff|-ffplay)
+        ff=1
+        # if ! expr "$ffplay_exec" : 'avplay' > /dev/null; then
+        if ! [[ "$ffplay_exec" =~ avplay ]]; then
+            # ffplay -version >& /dev/null
+            which ffplay >& /dev/null
+            if (($? == 1)); then
+                ffplay_exec="avplay"
+                ffmpeg_exec="avconv"
+            fi
+        fi
+        (($xvout)) && export VIDEODEV=xv
+        player=("$ffplay_exec")
+        # Add url as input
+        [[ -n "$url" ]] && player+=("-i" "$url")
+        # Add aurl as input
+        [[ -n "$aurl" ]] && player+=("-i" "$aurl" "-map" "0:v" "-map" "1:a")
+        player+=("${ffplay_opts[@]}")
+        #TODO: (($optimization)) && player+=("")
+        (($width)) && player+=("-x" "$width")
+        (($height)) && player+=("-y" "$height")
+        [[ "$geometry" ]] && player+=("-s" "$geometry" "-video_size" "$geometry")
+        (($audioonly)) && player+=("-vn" "-showmode" "1" "-x" "400" "-y" "100")
+        #TODO: [[ "$lang" ]] && player+=("")
+        (($verbose)) && player+=("-v" "info")
+        # Add options from stdin
+        _args_="${array[@]:1:$len-2}"
+        [[ -n "$_args_" && ! "$len" = 2 ]] && for i in "${_args_[@]}"; do player+=($i); done
+        # Create full executable string
+        #player+=("$url" "$aurl")
+    ;;
+    ## Watch in mpv (default):
+    *|-mp|-mpv)
+        _args_="${array[@]:1:$len-2}"
+        mpv_opts+=("--ytdl-format=$format")
+        player=("$mpv_exec" "${mpv_opts[@]}")
+        #player=("$mpv_exec" "${mpv_opts[@]}") # set by default
+        (($xvout)) && player+=("--vo=xv")
+        (($optimization)) && player+=("--vd-lavc-threads=$cores" "--vd-lavc-skiploopfilter=all" )
+        (($width)) && player+=("--geometry=$width")
+        (($height)) && player+=("")
+        [[ "$geometry" ]] && player+=("--geometry=$geometry")
+        (($audioonly)) && player+=("--no-video")
+        #[[ -n "$url" && -n "$aurl" ]] && player+=("--audio-file=$aurl")
+        [[ "$lang" ]] && player+=("--sub-codepage=enca:${lang%%,*}:UTF-8")
+        (($verbose)) && player+=("--msg-level=all=status")
+        # Add options from stdin
+        [[ -n "$_args_" && ! "$len" = 2 ]] && for i in "${_args_[@]}"; do player+=($i); done
+        # Create full executable string
+        player+=("$url")
     ;;
 esac
 
 ## Play now
-(($verbose)) && echo "exec: ${player[@]} $url"
-"${player[@]}" "$url"
+(($verbose)) && echo "exec: ${player[@]}"
+"${player[@]}"
 (($?)) && fail=$? && failmsg+="\nmyoutube \e[0;31mFail!\e[m"
 
 ## Delete cookies file
-if [[ -f "$cookies_file" ]]; then /bin/rm "$cookies_file"; fi
+[[ -f "$cookies_file" ]] && /bin/rm "$cookies_file"
 
 if (($fail)); then
     # notify-send -u critical -t 3000 -i error "myoutube" "Failed!" &
-    (($verbose)) && echo -e "$failmsg"
+    (($verbose)) && echo -e "$failmsg" 1>&2
     exit $fail
 else
     exit 0
