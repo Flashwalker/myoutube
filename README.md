@@ -1,12 +1,13 @@
-# myoutube - dumb bash script for watch video in desktop player via youtube-dl
+# myoutube
+### dumb bash script for watching videos in the desktop player via youtube-dl
 ...or local file.
 
-For now players available: mplayer, mpv, ffplay/avplay, vlc
+For now players available: mpv, mplayer, ffplay/avplay, vlc
 
 ### Dependencies:
 
-* [youtube-dl](https://rg3.github.io/youtube-dl/)
-* python, expr, mktemp (normally GNU/linux has this)
+* [yt-dlp](https://github.com/yt-dlp/yt-dlp) or [youtube-dl](https://rg3.github.io/youtube-dl/)
+* perl, python, expr, mktemp (normally GNU/linux has this)
 
 ### Usage:
 `myoutube -h`  
