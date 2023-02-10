@@ -65,13 +65,26 @@ cookies_file="$(mktemp -u /tmp/myoutube-cookies.XXXXXX)"
 
 ## Set formats aliases:
 ##  yt/yt/yt/vimeo/vk/vk/ok/ok/all/all
-hdformat='22/136+140/135+140/http-720p/url720/cache720/mpd-5/mpd-4/mp4/best'
+hdformat='22/(136/135)+(140/139)/http-720p/url720/cache720/mpd-5/mpd-4/mp4/best'
 ##  yt/yt/yt/yt/yt/vimeo/vk/vk/facebook/dailymotion/ok/ok/all/all
-sdformat='135+140/18/43/134+140/35/http-360p/url360/cache360/progressive_sd_src_no_ratelimit/http-380/mpd-3/mpd-4/mp4/best'
+sdformat='135+(140/139)/18/43/134+(140/139)/35/http-360p/url360/cache360/progressive_sd_src_no_ratelimit/http-380/mpd-3/mpd-4/mp4/best'
 ##  yt/yt/yt/yt/yt/yt/yt/vimeo/vk/vk/facebook/dailymotion/dailymotion/ok/ok/all/all
-ldformat='133+140/133+139/35/5/36/18/43/http-360p/url360/cache360/progressive_sd_src_no_ratelimit/http-240/http-380/mpd-2/mpd-1/mp4/best'
+ldformat='133+(140/139)/35/5/36/18/43/http-360p/url360/cache360/progressive_sd_src_no_ratelimit/http-240/http-380/mpd-2/mpd-1/mp4/best'
 ##  yt/yt/yt/yt/yt/yt/yt/yt/yt/vimeo/vk/vk/facebook/dailymotion/ok/ok/all
 aformat='141/251/140/171/18/43/35/5/36/http-360p/url360/cache360/progressive_sd_src_no_ratelimit/http-380/mpd-3/mpd-2/mp4/best' # dash audio
+
+## Youtube only:
+#mp4:
+hd="(bestvideo[width<=1280]/bestvideo)+bestaudio/(298/136)+bestaudio/22/best"
+fhd="(bestvideo[width<=1920]/bestvideo)+bestaudio/(399/299/137)+bestaudio/37/best"
+qhd="(bestvideo[width<=2560]/bestvideo)+bestaudio/(400/264)+bestaudio/best"
+uhd="(bestvideo[width>=3840]/bestvideo)+bestaudio/(401/266/138)+bestaudio/best"
+#webm:
+hdw="(bestvideo[width<=1280]/bestvideo)+bestaudio/(334/302/247)+bestaudio/45/best"
+fhdw="(bestvideo[width<=1920]/bestvideo)+bestaudio/(335/303/299/248/169)+bestaudio/46/best"
+qhdw="(bestvideo[width<=2560]/bestvideo)+bestaudio/(336/308/271)+bestaudio/best"
+uhdw="(bestvideo[width>=3840]/bestvideo)+bestaudio/(337/315/313)+bestaudio/best"
+
 ## Set default format:
 format="$hdformat"
 
@@ -79,7 +92,7 @@ format="$hdformat"
 audioonly=0 # 1: audio only, 0: audio & video 
 
 ## Set use of dash formats (youtube):
-skipdash=1 # 1: skip dash formats, 0: use dash formats.
+skipdash=0 # 1: skip dash formats, 0: use dash formats.
 
 ## Set player related options:
 # excluded:
@@ -138,15 +151,26 @@ OPTIONS:
     -v              - verbose.
 
   FORMAT:
-    -f FORMAT       - accepts: 'h', 's', 'l', 'a' or youtube-dl formats;
-                      'h' is hd (high) quality: first try to get 1280x720,
+    -f FORMAT       - accepts: 'h', 's', 'l', 'a' or
+                      'uhd'|'4k', 'qhd'|'2k', 'fhd', 'hd' or
+                      'uhdw'|'4kw', 'qhdw'|'2kw', 'fhdw', 'hdw' or
+                      or youtube-dl formats;
+                      'h' - hd (high) quality: first try to get 1280x720,
                        if not then best mp4, then the best (defaut);
-                      's' is sd (standart) quality: first try to get 640x360,
+                      's' - sd (standart) quality: first try to get 640x360,
                        then lower, then the best;
-                      'l' is ld (low) quality: first try to get 480x240,
+                      'l' - ld (low) quality: first try to get 480x240,
                        then lower, then 's', then the best;
-                      'a' is audio only: first try to get youtube dash audio,
+                      'a' - audio only: first try to get youtube dash audio,
                        if not then 's', 'l', best video & output only sound
+                      'uhd'|'4k' - 2160p mp4
+                      'qhd'|'2k' - 1440p mp4
+                      'fhd' - 1080p mp4
+                      'hd' - 720p mp4
+                      'uhdw'|'4kw' - 2160p webm
+                      'qhdw'|'2kw' - 1440p webm
+                      'fhdw' - 1080p webm
+                      'hdw' - 720p webm
                       (see: youtube-dl -F <URL>).
 
   PLAYER:
@@ -220,16 +244,27 @@ elif [[ "$1" == '-h' || "$1" == '-?' || "$1" == '--help' ]]; then
     exit 0
 fi
 
-if [[ "$1" == "-v" ]]; then verbose=1; shift; fi
+if [[ "$1" == "-v" ]]; then
+    verbose=1
+    shift
+fi
 if [[ "$1" == "-f" ]]; then
     if [[ "$2" && "$3" ]]; then
         format="$2"
         case "$format" in
-            h|hd) format="$hdformat" ;;
-            s|sd) format="$sdformat" ;;
-            l|ld) format="$ldformat" ;;
-            a|audio) format="$aformat"; skipdash=0; audioonly=1 ;;
-            *) skipdash=0 ;;
+            4k|uhd  ) format="$uhd"                              ;;
+            2k|qhd  ) format="$qhd"                              ;;
+            fd|fhd  ) format="$fhd"                              ;;
+            hd      ) format="$hd"                               ;;
+            4kw|uhdw) format="$uhdw"                             ;;
+            2kw|qhdw) format="$qhdw"                             ;;
+            fdw|fhdw) format="$fhdw"                             ;;
+            hdw     ) format="$hdw"                              ;;
+            h|hd    ) format="$hdformat"                         ;;
+            s|sd    ) format="$sdformat"                         ;;
+            l|ld    ) format="$ldformat"                         ;;
+            a|audio ) format="$aformat"; skipdash=0; audioonly=1 ;;
+            *)        skipdash=0                                 ;;
         esac
     fi
     shift 2
@@ -245,24 +280,27 @@ len="${#array[@]}"
 _last="${array[$len-1]}"
 ## Extract and store all arguments before last:
 args_="${array[@]:0:$len-1}"
+## Extract and store all arguments except first & last:
+#_args_="${array[@]:1:$len-2}"
+
 ## Unescape last argument
 if [[ ! "$_last" =~ ^file:// ]]; then
     perl -v >& /dev/null
-	hasperl=$?
+    hasperl=$?
     if ! (($hasperl == 127)); then
         _last="$(perl -MURI::Escape -e 'print uri_unescape($ARGV[0]);' "$_last")"
     else
-		pver="$(python --version 2>&1)"
-		pver="$(echo "${pver//Python/}"|cut -d'.' -f1)"
-		if (("$pver" == 2)); then
-			_last=$(python -c 'import sys,urllib; print urllib.unquote(sys.argv[1]).decode("utf8")' "$_last")
-		elif [[ "$pver" -ge 3 ]]; then
-			_last=$(python -c 'import sys; from urllib import parse; print(parse.unquote(sys.argv[1]))' "$_last")
-		else
-			echo '[error]: We need perl or python.'
-			exit 1
-		fi
-	fi
+        pver="$(python --version 2>&1)"
+        pver="$(echo "${pver//Python/}"|cut -d'.' -f1)"
+        if (("$pver" == 2)); then
+            _last=$(python -c 'import sys,urllib; print urllib.unquote(sys.argv[1]).decode("utf8")' "$_last")
+        elif [[ "$pver" -ge 3 ]]; then
+            _last=$(python -c 'import sys; from urllib import parse; print(parse.unquote(sys.argv[1]))' "$_last")
+        else
+            echo '[error]: We need perl or python.'
+            exit 1
+        fi
+    fi
 
     ## Can eat url:
     # https://m.youtube.com/watch?v=MejbOFk7H6c
@@ -276,7 +314,9 @@ if [[ ! "$_last" =~ ^file:// ]]; then
     # youtube.com/v/MejbOFk7H6c?version=3
     # https://youtube.com/embed/MejbOFk7H6c
     # youtube.com/embed/MejbOFk7H6c
-    ## Here we get yid = youtube id or nothnig:
+    ## Playlists works as well:
+    # https://www.youtube.com/playlist?list=PL0w2QA7IXPn5k1XKy5EZMHFKHi8zbvau8
+    ## Here we get: yid = youtube id or nothnig:
     yid="$(exps=('.*youtu\.be/\([^\/&?#]\+\)' '.*youtu.\+v[=/]\([^\/&?#]\+\)' '.*youtu.\+embed/\([^\/&?#]\+\)' '\([a-zA-Z0-9_-]\{11\}\)'); for exp in ${exps[@]}; do expr "$_last" : "$exp"; done)"
     ##  Get first non empty line, if exist get last argument
     #[[ "$yid" ]] && yid="$(echo $yid)" || yid="$_last"
@@ -322,15 +362,15 @@ if [[ ! "$vidurl" =~ ^[[:alpha:]]+://.+ ]]; then
 elif [[ "$1" =~ ^-m(player)?$ || "$1" =~ ^-vl(c)?$ || "$1" =~ ^-ff(play)?$ ]]; then
     ## pass url to youtube-dl
     ytgetcmd=("$youtubedl_exec" --ignore-errors $([[ "$ffmpeg_exec" ]] && echo --prefer-ffmpeg --ffmpeg-location "$ffmpeg_exec") $((($skipdash)) && echo --youtube-skip-dash-manifest) --cookies="$cookies_file" ${user_agent:+--user-agent="$user_agent"} -g $([[ "$format" ]] && echo "-f $format") "$vidurl")
-    (($verbose)) && echo "run: ${ytgetcmd[@]}"
-    
+
+    (($verbose)) && echo -e "run: ${ytgetcmd[@]}\n"
     IFSBAK="$IFS"
         IFS=$'\r\n' hotlink=($("${ytgetcmd[@]}"))
     IFS="$IFSBAK"
 
     if [ "${#hotlink[@]}" -gt 1 ]; then
         #for i in "${!hotlink[@]}"; do "url${i}=${hotlink[i]}"; done
-        
+
         # Set video url to the first url from the array of urls
         url="${hotlink[0]}"
         # Set video url to an array of urls
@@ -367,6 +407,7 @@ case "$1" in
     ;;
     ## Watch in vlc:
     -vl|-vlc)
+        ## Extract and store all arguments except first & last:
         _args_="${array[@]:1:$len-2}"
         player=("$vlc_exec" "${vlc_opts[@]}")
         (($xvout)) && player+=("--vout=xcb_xv")
