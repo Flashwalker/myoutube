@@ -75,15 +75,15 @@ aformat='141/251/140/171/18/43/35/5/36/http-360p/url360/cache360/progressive_sd_
 
 ## Youtube only:
 #mp4:
-hd="(bestvideo[width<=1280]/bestvideo)+bestaudio/(298/136)+bestaudio/22/best"
-fhd="(bestvideo[width<=1920]/bestvideo)+bestaudio/(399/299/137)+bestaudio/37/best"
-qhd="(bestvideo[width<=2560]/bestvideo)+bestaudio/(400/264)+bestaudio/best"
-uhd="(bestvideo[width>=3840]/bestvideo)+bestaudio/(401/266/138)+bestaudio/best"
+hd="(bestvideo[width<=1280]/bestvideo)+bestaudio/(298/136)+bestaudio/22/bv*+ba/bestvideo+bestaudio/best"
+fhd="(bestvideo[width<=1920]/bestvideo)+bestaudio/(399/299/137)+bestaudio/37/bv*+ba/bestvideo+bestaudio/best"
+qhd="(bestvideo[width<=2560]/bestvideo)+bestaudio/(400/264)+bestaudio/bv*+ba/bestvideo+bestaudio/best"
+uhd="(bestvideo[width>=3840]/bestvideo)+bestaudio/(401/266/138)+bestaudio/bv*+ba/bestvideo+bestaudio/best"
 #webm:
-hdw="(bestvideo[width<=1280]/bestvideo)+bestaudio/(334/302/247)+bestaudio/45/best"
-fhdw="(bestvideo[width<=1920]/bestvideo)+bestaudio/(335/303/299/248/169)+bestaudio/46/best"
-qhdw="(bestvideo[width<=2560]/bestvideo)+bestaudio/(336/308/271)+bestaudio/best"
-uhdw="(bestvideo[width>=3840]/bestvideo)+bestaudio/(337/315/313)+bestaudio/best"
+hdw="(bestvideo[width<=1280]/bestvideo)+bestaudio/(334/302/247)+bestaudio/45/bv*+ba/bestvideo+bestaudio/best"
+fhdw="(bestvideo[width<=1920]/bestvideo)+bestaudio/(335/303/299/248/169)+bestaudio/46/bv*+ba/bestvideo+bestaudio/best"
+qhdw="(bestvideo[width<=2560]/bestvideo)+bestaudio/(336/308/271)+bestaudio/bv*+ba/bestvideo+bestaudio/best"
+uhdw="(bestvideo[width>=3840]/bestvideo)+bestaudio/(337/315/313)+bestaudio/bv*+ba/bestvideo+bestaudio/best"
 
 ## Set default format:
 format="$hdformat"
@@ -252,19 +252,19 @@ if [[ "$1" == "-f" ]]; then
     if [[ "$2" && "$3" ]]; then
         format="$2"
         case "$format" in
-            4k|uhd  ) format="$uhd"                              ;;
-            2k|qhd  ) format="$qhd"                              ;;
-            fd|fhd  ) format="$fhd"                              ;;
-            hd      ) format="$hd"                               ;;
-            4kw|uhdw) format="$uhdw"                             ;;
-            2kw|qhdw) format="$qhdw"                             ;;
-            fdw|fhdw) format="$fhdw"                             ;;
-            hdw     ) format="$hdw"                              ;;
-            h|hd    ) format="$hdformat"                         ;;
-            s|sd    ) format="$sdformat"                         ;;
-            l|ld    ) format="$ldformat"                         ;;
-            a|audio ) format="$aformat"; skipdash=0; audioonly=1 ;;
-            *)        skipdash=0                                 ;;
+            4k|ud|uhd   ) format="$uhd"                              ;;
+            2k|qd|qhd   ) format="$qhd"                              ;;
+            fd|fhd      ) format="$fhd"                              ;;
+            hd          ) format="$hd"                               ;;
+            4kw|udw|uhdw) format="$uhdw"                             ;;
+            2kw|qdw|qhdw) format="$qhdw"                             ;;
+            fdw|fhdw    ) format="$fhdw"                             ;;
+            hdw         ) format="$hdw"                              ;;
+            h           ) format="$hdformat"                         ;;
+            s           ) format="$sdformat"                         ;;
+            l           ) format="$ldformat"                         ;;
+            a|audio     ) format="$aformat"; skipdash=0; audioonly=1 ;;
+            *           ) skipdash=0                                 ;;
         esac
     fi
     shift 2
