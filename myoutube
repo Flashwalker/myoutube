@@ -26,6 +26,7 @@ ffplay_exec="ffplay"
 ffmpeg_exec="/usr/bin/ffmpeg"
 # ffplay_exec="avplay"
 # ffmpeg_exec="avconv"
+#youtubedl_exec="${HOME}/bin/youtube-dl" # home
 #youtubedl_exec="youtube-dl" # env
 #youtubedl_exec="/usr/bin/youtube-dl" # apt
 #youtubedl_exec="/usr/local/bin/youtube-dl" # pip
@@ -52,7 +53,7 @@ geometry=""
 cookies_file="$(mktemp -u /tmp/myoutube-cookies.XXXXXX)"
 
 ## Set useragent:
-#user_agent='Mozilla/5.0 (Windows NT 6.1; rv:6.0) Gecko/20100101 Firefox/6.0' 
+#user_agent='Mozilla/5.0 (Windows NT 6.1; rv:6.0) Gecko/20100101 Firefox/6.0'
 #user_agent='Android' # Fails with youtube-dl for some reason
 
 ## Set default format:
@@ -105,7 +106,9 @@ mpv_opts=(\
     "--msg-level=all=fatal" \
     "--stop-screensaver" \
     "--ytdl" \
-    "--ytdl-raw-options=${cookies_file:+cookies=\"$cookies_file\",}${user_agent:+user-agent=\"$user_agent\",}youtube-skip-dash-manifest=" \
+    $((($skipdash)) || echo -n "--script-opts=ytdl_hook-use_manifests=yes") \
+    "--script-opts=ytdl_hook-ytdl_path=\"$youtubedl_exec\"" \
+    "--ytdl-raw-options=${cookies_file:+cookies=\"$cookies_file\",}${user_agent:+user-agent=\"$user_agent\",}$((($skipdash)) && echo -n youtube-skip-dash-manifest=,)" \
     ${cookies_file:+"--cookies" "--cookies-file=\"$cookies_file\""} \
     ${user_agent:+"--user-agent=\"$user_agent\""} \
     ${lang:+"--alang=$lang" "--slang=$lang"} \
@@ -361,7 +364,7 @@ if [[ ! "$vidurl" =~ ^[[:alpha:]]+://.+ ]]; then
 ## If player is not mpv
 elif [[ "$1" =~ ^-m(player)?$ || "$1" =~ ^-vl(c)?$ || "$1" =~ ^-ff(play)?$ ]]; then
     ## pass url to youtube-dl
-    ytgetcmd=("$youtubedl_exec" --ignore-errors $([[ "$ffmpeg_exec" ]] && echo --prefer-ffmpeg --ffmpeg-location "$ffmpeg_exec") $((($skipdash)) && echo --youtube-skip-dash-manifest) --cookies="$cookies_file" ${user_agent:+--user-agent="$user_agent"} -g $([[ "$format" ]] && echo "-f $format") "$vidurl")
+    ytgetcmd=("$youtubedl_exec" --ignore-errors $([[ "$ffmpeg_exec" ]] && echo -n --prefer-ffmpeg --ffmpeg-location "$ffmpeg_exec") $((($skipdash)) && echo -n --youtube-skip-dash-manifest) --cookies="$cookies_file" ${user_agent:+--user-agent="$user_agent"} -g $([[ "$format" ]] && echo -n "-f $format") "$vidurl")
 
     (($verbose)) && echo -e "run: ${ytgetcmd[@]}\n"
     IFSBAK="$IFS"
