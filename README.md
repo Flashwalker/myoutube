@@ -1,5 +1,5 @@
 # myoutube
-### dumb bash script for watching videos in the desktop player via youtube-dl
+### dumb bash script for watching videos in the desktop player via yt-dlp
 ...or local file.
 
 For now players available: mpv, mplayer, ffplay/avplay, vlc
